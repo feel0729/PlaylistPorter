@@ -1,29 +1,31 @@
 <!DOCTYPE HTML>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-<meta charset="utf-8">
-<meta name="viewport"
-	content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>PlaylistPorter</title>
-<link rel="stylesheet" href="/css/main.css" th:href="@{/css/main.css}" />
-<link th:if="${menuChoice} == 'searchResult'" rel="stylesheet"
-	href="/css/fixedFirstRowTable.css"
-	th:href="@{/css/fixedFirstRowTable.css}" />
+<link th:href="@{/css/main.css}" href="../css/main.css" rel="stylesheet" />
+<link th:if="${menuChoice} == 'searchResult'"
+	th:href="@{/css/fixedFirstRowTable.css}"
+	href="../css/fixedFirstRowTable.css" rel="stylesheet" />
 </head>
 <body>
 	<!-- 選單 -->
-	<div th:replace="/fragment/menu :: menu"></div>
+	<div th:replace="fragment/menu :: menu"></div>
 	<!-- 首頁 -->
 	<div th:if="${menuChoice} == 'homepage'">
 		<p>歡迎來到PlaylistPorter!</p>
+		<p>
+			程式碼在我的 <a th:href="'https://github.com/feel0729/PlaylistPorter'"
+				th:text="'GitHub'" target="_blank"></a> !
+		</p>
 	</div>
 	<!-- 歌曲查詢 -->
 	<div th:if="${menuChoice} == 'search'">
-		<section th:replace="/fragment/search :: search"></section>
+		<section th:replace="fragment/search :: search"></section>
 	</div>
 	<!-- 查詢結果 -->
 	<div th:if="${menuChoice} == 'searchResult'">
-		<section th:replace="/fragment/searchResult :: searchResult"></section>
+		<section th:replace="fragment/searchResult :: searchResult"></section>
 	</div>
 </body>
 </html>

@@ -1,12 +1,12 @@
 <!DOCTYPE HTML>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 </head>
 <body>
 	<section th:fragment=searchResult>
 		<p th:text="${target} + ' ' +${keyword} + ' 查詢結果'"></p>
-		<table>
+		<table th:if="${not #lists.isEmpty(resultList)}">
 			<thead>
 				<tr>
 					<th>歌曲名稱</th>
@@ -25,6 +25,7 @@
 				</tr>
 			</tbody>
 		</table>
+		<p th:if="${#lists.isEmpty(resultList)}">查無資料。</p>
 	</section>
 
 </body>
