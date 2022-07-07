@@ -1,4 +1,4 @@
 # PlaylistPorter
 move playlist from KKBOX to Spotify
 
-https://playlistporter.tw
+http://www.playlistporter.tw/
