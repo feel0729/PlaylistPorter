@@ -1,0 +1,31 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="utf-8">
+</head>
+<body>
+	<section th:fragment=searchResult>
+		<p th:text="${target} + ' ' +${keyword} + ' 查詢結果'"></p>
+		<table>
+			<thead>
+				<tr>
+					<th>歌曲名稱</th>
+					<th>專輯名稱</th>
+					<th>專輯封面</th>
+					<th>歌手名稱</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr th:each="result:${resultList}">
+					<td><a th:href="${result.songUrl}"
+						th:text="${result.songName}" target="_blank"></a></td>
+					<td th:text="${result.albumName}"></td>
+					<td><img th:src="${result.imageUrl}"></td>
+					<td th:text="${result.artistName}"></td>
+				</tr>
+			</tbody>
+		</table>
+	</section>
+
+</body>
+</html>

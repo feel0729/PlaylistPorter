@@ -6,8 +6,24 @@
 	content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <title>PlaylistPorter</title>
 <link rel="stylesheet" href="/css/main.css" th:href="@{/css/main.css}" />
+<link th:if="${menuChoice} == 'searchResult'" rel="stylesheet"
+	href="/css/fixedFirstRowTable.css"
+	th:href="@{/css/fixedFirstRowTable.css}" />
 </head>
 <body>
-	<div th:replace="menu :: menu"></div>
+	<!-- 選單 -->
+	<div th:replace="/fragment/menu :: menu"></div>
+	<!-- 首頁 -->
+	<div th:if="${menuChoice} == 'homepage'">
+		<p>歡迎來到PlaylistPorter!</p>
+	</div>
+	<!-- 歌曲查詢 -->
+	<div th:if="${menuChoice} == 'search'">
+		<section th:replace="/fragment/search :: search"></section>
+	</div>
+	<!-- 查詢結果 -->
+	<div th:if="${menuChoice} == 'searchResult'">
+		<section th:replace="/fragment/searchResult :: searchResult"></section>
+	</div>
 </body>
 </html>

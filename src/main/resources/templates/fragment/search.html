@@ -1,0 +1,15 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="utf-8">
+</head>
+<body>
+	<section th:fragment=search>
+		<p th:text="${target} + '歌曲查詢'"></p>
+		<form action="#" th:action="@{'/doSearch/'+${target}}" method="get">
+			<input type="text" name="keyword" placeholder="請輸入歌名" autofocus
+				required /> <input type="submit" value="送出" />
+		</form>
+	</section>
+</body>
+</html>

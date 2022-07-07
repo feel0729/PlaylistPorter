@@ -2,6 +2,11 @@ body {
 	background-color: #f2eee5;
 }
 
+p {
+	font-family: 'Open Sans', Arial, sans-serif;
+	font-size: 14px;
+}
+
 /* 下拉選單相關 - 開始 */
 /**
 * 此下拉選單的製作是參考此網站:https://www.astralweb.com.tw/pure-css-drop-down-menu/

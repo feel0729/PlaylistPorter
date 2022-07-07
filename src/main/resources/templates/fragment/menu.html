@@ -1,0 +1,20 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="utf-8">
+</head>
+<body>
+	<nav th:fragment=menu>
+		<!-- 此下拉選單的製作是參考此網站:https://www.astralweb.com.tw/pure-css-drop-down-menu/ -->
+		<ul class="drop-down-menu">
+			<li><a href="#" th:href="@{/}">首頁</a></li>
+			<li><a href="#">歌曲查詢</a>
+				<ul>
+					<li><a href="#" th:href="@{/search/KKBOX}">KKBOX</a></li>
+					<li><a href="#" th:href="@{/search/Spotify}">Spotify</a></li>
+				</ul></li>
+			<li><a href="#">歌單搬移</a></li>
+		</ul>
+	</nav>
+</body>
+</html>
