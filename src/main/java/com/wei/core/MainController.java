@@ -9,17 +9,17 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
-import com.wei.util.KkboxUtil;
-import com.wei.util.SpotifyUtil;
+import com.wei.search.KkboxSearch;
+import com.wei.search.SpotifySearch;
 
 @Controller
 public class MainController {
 
   @Autowired
-  KkboxUtil kkboxUtil;
+  KkboxSearch kkboxSearch;
 
   @Autowired
-  SpotifyUtil spotifyUtil;
+  SpotifySearch spotifySearch;
 
   @GetMapping("/")
   public String main(Model model) {
@@ -46,10 +46,10 @@ public class MainController {
 
     switch (target.toUpperCase()) {
       case "KKBOX":
-        resultList = kkboxUtil.doSearch(keyword);
+        resultList = kkboxSearch.doSearch(keyword);
         break;
       case "SPOTIFY":
-        resultList = spotifyUtil.doSearch(keyword);
+        resultList = spotifySearch.doSearch(keyword);
         break;
       default:
         resultList = new ArrayList<>();
