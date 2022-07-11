@@ -4,7 +4,7 @@ move playlist from KKBOX to Spotify
 http://www.playlistporter.tw/
 
 ---
-2022-07-11 開發筆記
+開發筆記 2022-07-11
 ---
 目前可將KKBOX歌單搬移至Spotify
 但是實際搬移結果與輸出到畫面上的搬移結果有差異
