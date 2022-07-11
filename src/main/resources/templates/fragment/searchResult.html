@@ -5,7 +5,7 @@
 </head>
 <body>
 	<section th:fragment=searchResult>
-		<p th:text="${target} + ' ' +${keyword} + ' 查詢結果'"></p>
+		<p th:text="${headline}"></p>
 		<table th:if="${not #lists.isEmpty(resultList)}">
 			<thead>
 				<tr>

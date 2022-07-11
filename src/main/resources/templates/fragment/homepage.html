@@ -10,6 +10,25 @@
 			程式碼在我的 <a th:href="'https://github.com/feel0729/PlaylistPorter'"
 				th:text="'GitHub'" target="_blank"></a> !
 		</p>
+		<p>因為試用其他網站上的歌單搬移功能，幫我搬了一堆錯誤的歌...</p>
+		<p>甚至有一半以上找不到...</p>
+		<p>自己串了KKBOX、Spotify的API</p>
+		<p>先做了將KKBOX歌單搬移到Spotify歌單的功能</p>
+		<p>流程:</p>
+		<ol>
+			<li>取得指定的KKBOX歌單</li>
+			<li>將該歌單上的全部歌名至Spotify查詢</li>
+			<li>篩選相似度最高的一首，相似度排序如下
+				<ol>
+					<li>歌名完全符合且歌手名完全符合</li>
+					<li>歌名完全符合或歌手名部分符合</li>
+					<li>歌名部分符合或歌手名部分符合</li>
+					<li>歌名部分符合</li>
+				</ol>
+			</li>
+			<li>將每一首歌插入指定的Spotify歌單</li>
+			<li>產出搬移結果至畫面上</li>
+		</ol>
 	</section>
 </body>
 </html>

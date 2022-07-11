@@ -5,7 +5,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication
-@ComponentScan({"com.wei.core", "com.wei.search", "com.wei.util"})
+@ComponentScan({"com.wei.core", "com.wei.playlist", "com.wei.porter", "com.wei.search",
+    "com.wei.util"})
 public class PlaylistPorterApplication {
 
   public static void main(String[] args) {

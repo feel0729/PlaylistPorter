@@ -39,12 +39,16 @@ public class SpotifySearch {
   private final String apiUrl = "https://api.spotify.com/v1/";
 
   public List<Map<String, String>> doSearch(String keyword) {
+    return doSearch(keyword, 10); // 一般查詢預設查10筆
+  }
+
+  public List<Map<String, String>> doSearch(String keyword, int limit) {
     List<Map<String, String>> resultList = new ArrayList<>();
 
     if (getToken()) {
 
-      String searchUrl = apiUrl
-          + "/search?q={q}&type={type}&market={market}&offset={offset}&limit={limit}";
+      String searchUrl =
+          apiUrl + "/search?q={q}&type={type}&market={market}&offset={offset}&limit={limit}";
 
       HttpHeaders headers = new HttpHeaders();
       headers.setBearerAuth(token);
@@ -56,7 +60,7 @@ public class SpotifySearch {
       params.put("type", "track");
       params.put("market", "TW");
       params.put("offset", 0);
-      params.put("limit", 10);
+      params.put("limit", limit);
 
       RestTemplate restTemplate = new RestTemplate();
 
@@ -99,6 +103,9 @@ public class SpotifySearch {
         // 歌曲名
         String songName = item.getString("name");
 
+        // 歌曲Uri
+        String songUri = item.getString("uri");
+
         // 歌曲連結
         String songUrl = item.getJSONObject("external_urls").getString("spotify");
 
@@ -132,6 +139,7 @@ public class SpotifySearch {
 
         Map<String, String> result = new HashMap<>();
         result.put("songName", songName);
+        result.put("songUri", songUri);
         result.put("songUrl", songUrl);
         result.put("albumName", albumName);
         result.put("imageUrl", imageUrl);
@@ -159,5 +167,69 @@ public class SpotifySearch {
     token = tokenUtil.getToken(tokenUrl, headers, bodyParamMap, "access_token");
 
     return !token.isEmpty();
+  }
+
+  public Map<String, String> doSearchMostLike(String searchSongName, String sourceArtistName) {
+    Map<String, String> mostlikeResult = new HashMap<>();
+
+    String songName = "";
+    String songUri = "";
+    String artistName = "";
+
+    int likeLevel = 5; // 1~5,1 is most like,5 is nothing like
+    // 1:歌名完全符合且歌手名完全符合
+    // 2:歌名完全符合或歌手名部分符合
+    // 3:歌名部分符合或歌手名部分符合
+    // 4:歌名部分符合
+    // 5:不符合
+
+    List<Map<String, String>> searchResultList = this.doSearch(searchSongName, 3);
+
+    for (Map<String, String> searchResult : searchResultList) {
+      String searchResultSongName = searchResult.get("songName");
+      String searchResultSongUri = searchResult.get("songUri");
+      String searchResultArtistName = searchResult.get("artistName");
+
+      if (searchResultSongName.equals(searchSongName)
+          && searchResultArtistName.equals(sourceArtistName)) { // 若歌名完全相符且歌手名完全相符
+        songName = searchResultSongName;
+        songUri = searchResultSongUri;
+        artistName = searchResultArtistName;
+        break; // 歌名與歌手名完全相符 直接離開迴圈
+      }
+      if (searchResultSongName.equals(searchSongName)
+          && (sourceArtistName.contains(searchResultArtistName)
+              || searchResultArtistName.contains(sourceArtistName))) { // 若歌名完全相符且歌手名部分相符
+        if (likeLevel > 2) {
+          songName = searchResultSongName;
+          songUri = searchResultSongUri;
+          artistName = searchResultArtistName;
+          likeLevel = 2;
+        }
+      } else if ((searchResultSongName.contains(searchSongName)
+          || searchSongName.contains(searchResultSongName))
+          && (sourceArtistName.contains(searchResultArtistName)
+              || searchResultArtistName.contains(sourceArtistName))) { // 若歌名部分相符且歌手名部分相符
+        if (likeLevel > 3) {
+          songName = searchResultSongName;
+          songUri = searchResultSongUri;
+          artistName = searchResultArtistName;
+          likeLevel = 3;
+        }
+      } else if ((searchResultSongName.contains(searchSongName)
+          || searchSongName.contains(searchResultSongName))) { // 若歌名部分相符
+        if (likeLevel > 4) {
+          songName = searchResultSongName;
+          songUri = searchResultSongUri;
+          artistName = searchResultArtistName;
+          likeLevel = 4;
+        }
+      }
+    }
+
+    mostlikeResult.put("songName", songName);
+    mostlikeResult.put("songUri", songUri);
+    mostlikeResult.put("artistName", artistName);
+    return mostlikeResult;
   }
 }
