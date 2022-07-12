@@ -21,3 +21,16 @@ API rate limit exceeded
 https://developer.spotify.com/documentation/web-api/guides/rate-limits/
 
 ---
+開發筆記 2022-07-12
+---
+在對Spotify大量查詢的時候增加
+
+TimeUnit.SECONDS.sleep(spotifyRateLimits);
+
+spotifyRateLimits 一開始設30 , 後來降到1
+
+沒有出現 API rate limit exceeded的錯誤了
+
+但歌單內的歌曲若太多,會發生504 timeout
+
+---
