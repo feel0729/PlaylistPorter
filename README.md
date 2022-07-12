@@ -18,4 +18,6 @@ http://www.playlistporter.tw/
 
 API rate limit exceeded
 
+https://developer.spotify.com/documentation/web-api/guides/rate-limits/
+
 ---
