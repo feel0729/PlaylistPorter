@@ -6,10 +6,13 @@ import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.context.annotation.RequestScope;
 import com.wei.porter.PorterCarry;
 import com.wei.search.KkboxSearch;
 import com.wei.search.SpotifySearch;
@@ -33,6 +36,7 @@ public class MainController {
   }
 
   @GetMapping("/search/{target}")
+  @RequestScope
   public String search(@PathVariable String target, Model model) {
 
     model.addAttribute("menuChoice", "search"); // 回傳歌曲查詢頁
@@ -119,7 +123,8 @@ public class MainController {
     return "main";
   }
 
-  @GetMapping("/porterCarry/{source}/{target}")
+  @PostMapping("/porterCarry/{source}/{target}")
+  @Transactional(timeout = 300)
   public String porterCarry(@PathVariable(value = "source") String source,
       @PathVariable(value = "target") String target,
       @RequestParam(value = "accessToken") String accessToken,
@@ -172,7 +177,6 @@ public class MainController {
 
   @GetMapping("/spotifyAuthModifyPlaylist")
   public String spotifyAuthModifyPlaylist(Model model) {
-    System.out.println("go to spotifyAuthModifyPlaylist.");
     return "spotifyAuthModifyPlaylist";
   }
 }

@@ -1,18 +1,30 @@
 package com.wei.porter;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.annotation.RequestScope;
 import com.wei.playlist.KkboxPlaylist;
 import com.wei.playlist.SpotifyPlaylist;
 import com.wei.search.SpotifySearch;
 
 @Component
+@RequestScope
 public class PorterCarry {
+  private static final Logger logger = LogManager.getLogger();
 
+  @Value("${SPOTIFY_RATE_LIMITS}")
+  private long spotifyRateLimits = 1;
+  
   @Autowired
   KkboxPlaylist kkboxPlaylist;
 
@@ -53,6 +65,16 @@ public class PorterCarry {
       Map<String, String> mostlikeResult =
           spotifySearch.doSearchMostLike(searchSongName, sourceArtistName);
 
+      try {
+        // Spotify’s API rate limit is calculated based on the number of calls
+        // that your app makes to Spotify in a rolling 30 second window.
+        TimeUnit.SECONDS.sleep(spotifyRateLimits);
+      } catch (InterruptedException e) {
+        StringWriter errors = new StringWriter();
+        e.printStackTrace(new PrintWriter(errors));
+        logger.error(errors.toString());
+      }
+
       Map<String, String> result = new HashMap<>();
       result.put("sourceSongIndex", "" + sourceSongIndex);
       result.put("sourceSongName", sourceSongName);
@@ -61,14 +83,12 @@ public class PorterCarry {
       result.put("targetSongUri", mostlikeResult.get("songUri"));
       result.put("targetSongName", mostlikeResult.get("songName"));
       result.put("targetArtistName", mostlikeResult.get("artistName"));
-      result.put("carryResult", " ");
+      result.put("carryResult", "");
       resultList.add(result);
       sourceSongIndex++;
     }
 
-    resultList = spotifyPlaylist.addItemToPlaylist(accessToken, targetPlaylistUrl, resultList);
-
-    return resultList;
+    return spotifyPlaylist.addItemToPlaylist(accessToken, targetPlaylistUrl, resultList);
   }
 
 }

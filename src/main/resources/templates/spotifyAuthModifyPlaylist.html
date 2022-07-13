@@ -134,29 +134,35 @@
 					$('#loggedin').hide();
 				}
 
-				document.getElementById('login-button').addEventListener(
-						'click',
-						function() {
+				document
+						.getElementById('login-button')
+						.addEventListener(
+								'click',
+								function() {
 
-							var client_id = '1a4f765053cc49d0b0daf0905152dfb6'; // Your client id
-							var redirect_uri = 'http://playlistporter-env.eba-smth7dsp.ap-northeast-1.elasticbeanstalk.com/porter/KKBOX/Spotify'; // Your redirect uri
+									var client_id = '1a4f765053cc49d0b0daf0905152dfb6'; // Your client id
+									// Your redirect uri
+									// var redirect_uri = 'http://localhost:5000/porter/KKBOX/Spotify';
+									var redirect_uri = 'http://playlistporter-env.eba-smth7dsp.ap-northeast-1.elasticbeanstalk.com/porter/KKBOX/Spotify';
 
-							var state = generateRandomString(16);
+									var state = generateRandomString(16);
 
-							localStorage.setItem(stateKey, state);
-							var scope = 'playlist-modify-private';
+									localStorage.setItem(stateKey, state);
+									var scope = 'playlist-modify-private';
 
-							var url = 'https://accounts.spotify.com/authorize';
-							url += '?response_type=token';
-							url += '&client_id='
-									+ encodeURIComponent(client_id);
-							url += '&scope=' + encodeURIComponent(scope);
-							url += '&redirect_uri='
-									+ encodeURIComponent(redirect_uri);
-							url += '&state=' + encodeURIComponent(state);
+									var url = 'https://accounts.spotify.com/authorize';
+									url += '?response_type=token';
+									url += '&client_id='
+											+ encodeURIComponent(client_id);
+									url += '&scope='
+											+ encodeURIComponent(scope);
+									url += '&redirect_uri='
+											+ encodeURIComponent(redirect_uri);
+									url += '&state='
+											+ encodeURIComponent(state);
 
-							window.location = url;
-						}, false);
+									window.location = url;
+								}, false);
 			}
 		})();
 	</script>

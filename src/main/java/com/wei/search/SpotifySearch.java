@@ -6,6 +6,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,10 +21,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.context.annotation.RequestScope;
 import com.wei.util.TokenUtil;
 
 @Component
+@RequestScope
 public class SpotifySearch {
+  private static final Logger logger = LogManager.getLogger();
 
   @Autowired
   TokenUtil tokenUtil;
@@ -32,6 +38,9 @@ public class SpotifySearch {
   @Value("${SPOTIFY_CLIENT_SECRET}")
   private String clientSecret = "";
 
+  @Value("${SPOTIFY_RATE_LIMITS}")
+  private long spotifyRateLimits = 1;
+
   private String token = "";
 
   private final String tokenUrl = "https://accounts.spotify.com/api/token";
@@ -39,132 +48,156 @@ public class SpotifySearch {
   private final String apiUrl = "https://api.spotify.com/v1/";
 
   public List<Map<String, String>> doSearch(String keyword) {
-    return doSearch(keyword, 10); // 一般查詢預設查10筆
+    return doSearch(keyword, 50, false); // 一般查詢預設查50筆
   }
 
-  public List<Map<String, String>> doSearch(String keyword, int limit) {
+  public List<Map<String, String>> doSearch(String keyword, int limit, boolean refreshTokenFlag) {
     List<Map<String, String>> resultList = new ArrayList<>();
 
-    if (getToken()) {
+    if (token.isEmpty() || refreshTokenFlag) {
+      getToken();
+    }
 
-      String searchUrl =
-          apiUrl + "/search?q={q}&type={type}&market={market}&offset={offset}&limit={limit}";
+    String searchUrl =
+        apiUrl + "/search?q={q}&type={type}&market={market}&offset={offset}&limit={limit}";
 
-      HttpHeaders headers = new HttpHeaders();
-      headers.setBearerAuth(token);
+    HttpHeaders headers = new HttpHeaders();
+    headers.setBearerAuth(token);
 
-      HttpEntity<?> request = new HttpEntity<Object>("", headers);
+    HttpEntity<?> request = new HttpEntity<Object>("", headers);
 
-      Map<String, Object> params = new HashMap<>();
-      params.put("q", keyword);
-      params.put("type", "track");
-      params.put("market", "TW");
-      params.put("offset", 0);
-      params.put("limit", limit);
+    Map<String, Object> params = new HashMap<>();
+    params.put("q", keyword);
+    params.put("type", "track");
+    params.put("market", "TW");
+    params.put("offset", 0);
+    params.put("limit", limit);
 
-      RestTemplate restTemplate = new RestTemplate();
+    RestTemplate restTemplate = new RestTemplate();
 
-      ResponseEntity<String> response = null;
+    ResponseEntity<String> response = null;
 
-      try {
-        response = restTemplate.exchange(searchUrl, HttpMethod.GET, request, String.class, params);
-      } catch (Exception e) {
-        StringWriter errors = new StringWriter();
-        e.printStackTrace(new PrintWriter(errors));
-        System.out.println(errors.toString());
-      }
+    try {
+      response = restTemplate.exchange(searchUrl, HttpMethod.GET, request, String.class, params);
+    } catch (Exception e) {
+      StringWriter errors = new StringWriter();
+      e.printStackTrace(new PrintWriter(errors));
+      logger.error(errors.toString());
+    }
 
-      if (response != null) {
-
-        resultList = analyzeResponse(response);
-      }
+    if (response != null) {
+      resultList = analyzeResponse(response, keyword, limit);
     }
 
     return resultList;
   }
 
-  private List<Map<String, String>> analyzeResponse(ResponseEntity<String> response) {
+  private List<Map<String, String>> analyzeResponse(ResponseEntity<String> response, String keyword,
+      int limit) {
     List<Map<String, String>> resultList = new ArrayList<>();
 
     try {
       JSONObject body = new JSONObject(response.getBody().toString());
 
-      JSONObject tracks = body.getJSONObject("tracks");
+      if (body.has("error")) {
 
-      JSONArray items = tracks.getJSONArray("items");
+        JSONObject error = body.getJSONObject("error");
 
-      int size = items.length();
+        int status = error.getInt("status");
+        String msg = error.getString("message");
 
-      // System.out.println("size=" + size);
-      for (int itemIndex = 0; itemIndex < size; itemIndex++) {
-        // System.out.println("i=" + i);
-        JSONObject item = items.getJSONObject(itemIndex);
+        logger.info("reponse error status = " + status + " , message = " + msg);
 
-        // 歌曲名
-        String songName = item.getString("name");
+        switch (status) {
+          case 401:
+            // Bad or expired token.
+            this.doSearch(keyword, limit, true);
+            break;
+          case 429:
+            // The app has exceeded its rate limits.
+            TimeUnit.SECONDS.sleep(spotifyRateLimits);
+            break;
+        }
+      } else {
 
-        // 歌曲Uri
-        String songUri = item.getString("uri");
+        JSONObject tracks = body.getJSONObject("tracks");
 
-        // 歌曲連結
-        String songUrl = item.getJSONObject("external_urls").getString("spotify");
+        JSONArray items = tracks.getJSONArray("items");
 
-        // 專輯
-        JSONObject album = item.getJSONObject("album");
-        String albumName = album.getString("name");
+        int size = items.length();
 
-        // 專輯封面
-        JSONArray images = album.getJSONArray("images");
-        int imagesSize = images.length();
-        long lastHeight = 0;
-        String imageUrl = "";
-        for (int imageIndex = 0; imageIndex < imagesSize; imageIndex++) {
-          JSONObject image = images.getJSONObject(imageIndex);
+        // System.out.println("size=" + size);
+        for (int itemIndex = 0; itemIndex < size; itemIndex++) {
+          // System.out.println("i=" + i);
+          JSONObject item = items.getJSONObject(itemIndex);
 
-          long height = image.getLong("height");
+          // 歌曲名
+          String songName = item.getString("name");
 
-          if (lastHeight == 0 || height < lastHeight) {
-            imageUrl = image.getString("url");
-            lastHeight = height;
+          // 歌曲Uri
+          String songUri = item.getString("uri");
+
+          // 歌曲連結
+          String songUrl = item.getJSONObject("external_urls").getString("spotify");
+
+          // 專輯
+          JSONObject album = item.getJSONObject("album");
+          String albumName = album.getString("name");
+
+          // 專輯封面
+          JSONArray images = album.getJSONArray("images");
+          int imagesSize = images.length();
+          long lastHeight = 0;
+          String imageUrl = "";
+          for (int imageIndex = 0; imageIndex < imagesSize; imageIndex++) {
+            JSONObject image = images.getJSONObject(imageIndex);
+
+            long height = image.getLong("height");
+
+            if (lastHeight == 0 || height < lastHeight) {
+              imageUrl = image.getString("url");
+              lastHeight = height;
+            }
           }
+
+          // 歌手
+          JSONArray artists = item.getJSONArray("artists");
+          String artistName = "";
+          for (int artistIndex = 0; artistIndex < artists.length(); artistIndex++) {
+            artistName += (artistIndex == 0 ? "" : " / ")
+                + artists.getJSONObject(artistIndex).getString("name");
+          }
+
+          Map<String, String> result = new HashMap<>();
+          result.put("songName", songName);
+          result.put("songUri", songUri);
+          result.put("songUrl", songUrl);
+          result.put("albumName", albumName);
+          result.put("imageUrl", imageUrl);
+          result.put("artistName", artistName);
+
+          resultList.add(result);
         }
-
-        // 歌手
-        JSONArray artists = item.getJSONArray("artists");
-        String artistName = "";
-        for (int artistIndex = 0; artistIndex < artists.length(); artistIndex++) {
-          artistName += (artistIndex == 0 ? "" : " / ")
-              + artists.getJSONObject(artistIndex).getString("name");
-        }
-
-        Map<String, String> result = new HashMap<>();
-        result.put("songName", songName);
-        result.put("songUri", songUri);
-        result.put("songUrl", songUrl);
-        result.put("albumName", albumName);
-        result.put("imageUrl", imageUrl);
-        result.put("artistName", artistName);
-
-        resultList.add(result);
       }
-
     } catch (Exception e) {
       StringWriter errors = new StringWriter();
       e.printStackTrace(new PrintWriter(errors));
-      System.out.println(errors.toString());
+      logger.error(errors.toString());
     }
     return resultList;
   }
 
   private boolean getToken() {
 
-    HttpHeaders headers = new HttpHeaders();
-    headers.setBasicAuth(clientId, clientSecret);
+    if (token.isEmpty()) {
+      HttpHeaders headers = new HttpHeaders();
+      headers.setBasicAuth(clientId, clientSecret);
 
-    MultiValueMap<String, String> bodyParamMap = new LinkedMultiValueMap<>();
-    bodyParamMap.add("grant_type", "client_credentials");
+      MultiValueMap<String, String> bodyParamMap = new LinkedMultiValueMap<>();
+      bodyParamMap.add("grant_type", "client_credentials");
 
-    token = tokenUtil.getToken(tokenUrl, headers, bodyParamMap, "access_token");
+      token = tokenUtil.getToken(tokenUrl, headers, bodyParamMap, "access_token");
+    }
 
     return !token.isEmpty();
   }
@@ -183,7 +216,7 @@ public class SpotifySearch {
     // 4:歌名部分符合
     // 5:不符合
 
-    List<Map<String, String>> searchResultList = this.doSearch(searchSongName, 3);
+    List<Map<String, String>> searchResultList = this.doSearch(searchSongName, 5, false);
 
     for (Map<String, String> searchResult : searchResultList) {
       String searchResultSongName = searchResult.get("songName");

@@ -6,13 +6,14 @@
 <body>
 	<section th:fragment=search>
 		<p th:text="${headline}"></p>
-		<form action="#" th:action="@{'/doSearch/'+${target}}" method="get">
+		<form name="keywordForm" action="#" th:action="@{'/doSearch/'+${target}}" method="get">
 			<p>
 				<input type="text" name="keyword" placeholder="請輸入歌名" autofocus
 					required />
 			</p>
 			<p>
-				<input type="submit" value="送出" />
+				<input type="submit" value="送出"
+					onclick="javascript:{this.disabled=true;document.keywordForm.submit();}" />
 			</p>
 		</form>
 	</section>

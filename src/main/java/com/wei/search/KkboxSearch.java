@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,10 +20,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.context.annotation.RequestScope;
 import com.wei.util.TokenUtil;
 
 @Component
+@RequestScope
 public class KkboxSearch {
+  private static final Logger logger = LogManager.getLogger();
 
   @Autowired
   TokenUtil tokenUtil;
@@ -66,14 +71,10 @@ public class KkboxSearch {
       } catch (Exception e) {
         StringWriter errors = new StringWriter();
         e.printStackTrace(new PrintWriter(errors));
-        System.out.println(errors.toString());
+        logger.error(errors.toString());
       }
 
       if (response != null) {
-
-        System.out.println("response");
-        System.out.println(response.toString());
-
         resultList = analyzeResponse(response);
       }
     }
@@ -140,7 +141,7 @@ public class KkboxSearch {
     } catch (Exception e) {
       StringWriter errors = new StringWriter();
       e.printStackTrace(new PrintWriter(errors));
-      System.out.println(errors.toString());
+      logger.error(errors.toString());
     }
     return resultList;
   }
