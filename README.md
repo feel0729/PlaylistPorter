@@ -34,7 +34,7 @@ spotifyRateLimits 一開始設30 , 後來降到1
 但歌單內的歌曲若太多,會發生504 timeout
 
 ---
-開發筆記 2022-07-12
+開發筆記 2022-07-13
 ---
 TimeUnit.SECONDS.sleep(spotifyRateLimits); 
 
