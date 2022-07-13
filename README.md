@@ -34,3 +34,20 @@ spotifyRateLimits 一開始設30 , 後來降到1
 但歌單內的歌曲若太多,會發生504 timeout
 
 ---
+開發筆記 2022-07-12
+---
+TimeUnit.SECONDS.sleep(spotifyRateLimits); 
+
+改用
+
+TimeUnit.MILLISECONDS.sleep(spotifyRequestDelayMilliseconds);
+
+目前設定為每0.1秒發出一個Request,但衍生問題"多個使用者同時發送時如何控管發出Request的頻率"
+
+本機測試不會丟504 timeout
+
+部署到Elastic Beanstalk 測試也不會
+
+TODO: 接畫面的Controller 試著改回傳 WebAsyncTask
+
+---
