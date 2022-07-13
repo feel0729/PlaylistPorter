@@ -11,20 +11,20 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
-import org.springframework.web.context.annotation.RequestScope;
 import com.wei.playlist.KkboxPlaylist;
 import com.wei.playlist.SpotifyPlaylist;
 import com.wei.search.SpotifySearch;
 
 @Component
-@RequestScope
+@Scope("prototype")
 public class PorterCarry {
   private static final Logger logger = LogManager.getLogger();
 
-  @Value("${SPOTIFY_RATE_LIMITS}")
-  private long spotifyRateLimits = 1;
-  
+  @Value("${SPOTIFY_REQUEST_DELAY_MILLISECONDS}")
+  private long spotifyRequestDelayMilliseconds = 100; // DEFAULT VALUE
+
   @Autowired
   KkboxPlaylist kkboxPlaylist;
 
@@ -36,6 +36,9 @@ public class PorterCarry {
 
   public List<Map<String, String>> kkboxToSpotify(String accessToken, String sourcePlaylistUrl,
       String targetPlaylistUrl) {
+
+    logger.info("kkboxToSpotify ... ");
+
     List<Map<String, String>> resultList = new ArrayList<>();
 
     List<Map<String, String>> sourcePlaylist = kkboxPlaylist.getPlaylist(sourcePlaylistUrl);
@@ -68,7 +71,7 @@ public class PorterCarry {
       try {
         // Spotify’s API rate limit is calculated based on the number of calls
         // that your app makes to Spotify in a rolling 30 second window.
-        TimeUnit.SECONDS.sleep(spotifyRateLimits);
+        TimeUnit.MILLISECONDS.sleep(spotifyRequestDelayMilliseconds);
       } catch (InterruptedException e) {
         StringWriter errors = new StringWriter();
         e.printStackTrace(new PrintWriter(errors));

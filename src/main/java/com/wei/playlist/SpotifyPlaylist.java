@@ -13,17 +13,17 @@ import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Scope;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.context.annotation.RequestScope;
 import com.wei.util.TokenUtil;
 
 @Component
-@RequestScope
+@Scope("prototype")
 public class SpotifyPlaylist {
   private static final Logger logger = LogManager.getLogger();
 
@@ -36,8 +36,8 @@ public class SpotifyPlaylist {
   @Value("${SPOTIFY_CLIENT_SECRET}")
   private String clientSecret = "";
 
-  @Value("${SPOTIFY_RATE_LIMITS}")
-  private long spotifyRateLimits = 1;
+  @Value("${SPOTIFY_REQUEST_DELAY_MILLISECONDS}")
+  private long spotifyRequestDelayMilliseconds = 100; // DEFAULT VALUE
 
   private final String apiUrl = "https://api.spotify.com/v1/";
 
@@ -164,7 +164,7 @@ public class SpotifyPlaylist {
           case 429:
             // The app has exceeded its rate limits.
             try {
-              TimeUnit.SECONDS.sleep(spotifyRateLimits);
+              TimeUnit.MILLISECONDS.sleep(spotifyRequestDelayMilliseconds);
             } catch (InterruptedException e) {
               StringWriter errors = new StringWriter();
               e.printStackTrace(new PrintWriter(errors));

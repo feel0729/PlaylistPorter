@@ -3,6 +3,7 @@ package com.wei.search;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +14,7 @@ import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Scope;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -21,11 +23,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.context.annotation.RequestScope;
 import com.wei.util.TokenUtil;
 
 @Component
-@RequestScope
+@Scope("prototype")
 public class SpotifySearch {
   private static final Logger logger = LogManager.getLogger();
 
@@ -38,8 +39,8 @@ public class SpotifySearch {
   @Value("${SPOTIFY_CLIENT_SECRET}")
   private String clientSecret = "";
 
-  @Value("${SPOTIFY_RATE_LIMITS}")
-  private long spotifyRateLimits = 1;
+  @Value("${SPOTIFY_REQUEST_DELAY_MILLISECONDS}")
+  private long spotifyRequestDelayMilliseconds = 100; // DEFAULT VALUE
 
   private String token = "";
 
@@ -77,6 +78,7 @@ public class SpotifySearch {
 
     ResponseEntity<String> response = null;
 
+    logger.info("doSearch at " + new Date().toString());
     try {
       response = restTemplate.exchange(searchUrl, HttpMethod.GET, request, String.class, params);
     } catch (Exception e) {
@@ -115,7 +117,7 @@ public class SpotifySearch {
             break;
           case 429:
             // The app has exceeded its rate limits.
-            TimeUnit.SECONDS.sleep(spotifyRateLimits);
+            TimeUnit.MILLISECONDS.sleep(spotifyRequestDelayMilliseconds);
             break;
         }
       } else {
@@ -203,6 +205,9 @@ public class SpotifySearch {
   }
 
   public Map<String, String> doSearchMostLike(String searchSongName, String sourceArtistName) {
+
+    logger.info("doSearchMostLike ... searchSongName : " + searchSongName);
+
     Map<String, String> mostlikeResult = new HashMap<>();
 
     String songName = "";
@@ -218,46 +223,43 @@ public class SpotifySearch {
 
     List<Map<String, String>> searchResultList = this.doSearch(searchSongName, 5, false);
 
+
     for (Map<String, String> searchResult : searchResultList) {
       String searchResultSongName = searchResult.get("songName");
       String searchResultSongUri = searchResult.get("songUri");
       String searchResultArtistName = searchResult.get("artistName");
+
+      logger.info("searchResultSongName : " + searchResultSongName);
+
+      int thisSongLikeLevel = 5;
 
       if (searchResultSongName.equals(searchSongName)
           && searchResultArtistName.equals(sourceArtistName)) { // 若歌名完全相符且歌手名完全相符
         songName = searchResultSongName;
         songUri = searchResultSongUri;
         artistName = searchResultArtistName;
+        logger.info("likeLevel : " + 1 + " , break loop.");
         break; // 歌名與歌手名完全相符 直接離開迴圈
-      }
-      if (searchResultSongName.equals(searchSongName)
+      } else if (searchResultSongName.equals(searchSongName)
           && (sourceArtistName.contains(searchResultArtistName)
               || searchResultArtistName.contains(sourceArtistName))) { // 若歌名完全相符且歌手名部分相符
-        if (likeLevel > 2) {
-          songName = searchResultSongName;
-          songUri = searchResultSongUri;
-          artistName = searchResultArtistName;
-          likeLevel = 2;
-        }
+        thisSongLikeLevel = 2;
       } else if ((searchResultSongName.contains(searchSongName)
           || searchSongName.contains(searchResultSongName))
           && (sourceArtistName.contains(searchResultArtistName)
               || searchResultArtistName.contains(sourceArtistName))) { // 若歌名部分相符且歌手名部分相符
-        if (likeLevel > 3) {
-          songName = searchResultSongName;
-          songUri = searchResultSongUri;
-          artistName = searchResultArtistName;
-          likeLevel = 3;
-        }
+        thisSongLikeLevel = 3;
       } else if ((searchResultSongName.contains(searchSongName)
           || searchSongName.contains(searchResultSongName))) { // 若歌名部分相符
-        if (likeLevel > 4) {
-          songName = searchResultSongName;
-          songUri = searchResultSongUri;
-          artistName = searchResultArtistName;
-          likeLevel = 4;
-        }
+        thisSongLikeLevel = 4;
       }
+      if (thisSongLikeLevel < likeLevel) {
+        songName = searchResultSongName;
+        songUri = searchResultSongUri;
+        artistName = searchResultArtistName;
+        likeLevel = thisSongLikeLevel;
+      }
+      logger.info("likeLevel : " + thisSongLikeLevel);
     }
 
     mostlikeResult.put("songName", songName);
