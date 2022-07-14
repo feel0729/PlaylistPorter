@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import com.wei.playlist.KkboxPlaylist;
 import com.wei.playlist.SpotifyPlaylist;
+import com.wei.playlist.YoutubePlaylist;
 import com.wei.search.SpotifySearch;
 
 @Component
@@ -33,6 +34,9 @@ public class PorterCarry {
 
   @Autowired
   SpotifyPlaylist spotifyPlaylist;
+  
+  @Autowired
+  YoutubePlaylist youtubePlaylist;
 
   public List<Map<String, String>> kkboxToSpotify(String accessToken, String sourcePlaylistUrl,
       String targetPlaylistUrl) {
@@ -64,6 +68,53 @@ public class PorterCarry {
       if (searchSongName.contains("（")) {
         searchSongName = searchSongName.substring(0, searchSongName.indexOf("（"));
       }
+
+      Map<String, String> mostlikeResult =
+          spotifySearch.doSearchMostLike(searchSongName, sourceArtistName);
+
+      try {
+        // Spotify’s API rate limit is calculated based on the number of calls
+        // that your app makes to Spotify in a rolling 30 second window.
+        TimeUnit.MILLISECONDS.sleep(spotifyRequestDelayMilliseconds);
+      } catch (InterruptedException e) {
+        StringWriter errors = new StringWriter();
+        e.printStackTrace(new PrintWriter(errors));
+        logger.error(errors.toString());
+      }
+
+      Map<String, String> result = new HashMap<>();
+      result.put("sourceSongIndex", "" + sourceSongIndex);
+      result.put("sourceSongName", sourceSongName);
+      result.put("sourceArtistName", sourceSong.get("artistName"));
+      result.put("searchSongName", searchSongName.trim());
+      result.put("targetSongUri", mostlikeResult.get("songUri"));
+      result.put("targetSongName", mostlikeResult.get("songName"));
+      result.put("targetArtistName", mostlikeResult.get("artistName"));
+      result.put("carryResult", "");
+      resultList.add(result);
+      sourceSongIndex++;
+    }
+
+    return spotifyPlaylist.addItemToPlaylist(accessToken, targetPlaylistUrl, resultList);
+  }
+
+  public List<Map<String, String>> youtubeToSpotify(String accessToken, String sourcePlaylistUrl,
+      String targetPlaylistUrl) {
+
+    logger.info("youtubeToSpotify ... ");
+
+    List<Map<String, String>> resultList = new ArrayList<>();
+
+    List<Map<String, String>> sourcePlaylist = youtubePlaylist.getPlaylist(sourcePlaylistUrl);
+
+    int sourceSongIndex = 1;
+    for (Map<String, String> sourceSong : sourcePlaylist) {
+
+      String sourceSongName = sourceSong.get("songName");
+
+      String sourceArtistName = sourceSong.get("artistName");
+
+      String searchSongName = sourceSongName.trim();
 
       Map<String, String> mostlikeResult =
           spotifySearch.doSearchMostLike(searchSongName, sourceArtistName);

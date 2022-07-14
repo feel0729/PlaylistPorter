@@ -1,5 +1,5 @@
 <!doctype html>
-<html>
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
 <title>Spotify auth modify playlist</title>
 <link rel="stylesheet"
@@ -61,7 +61,7 @@
 	<script
 		src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/2.0.0-alpha.1/handlebars.min.js"></script>
 	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
-	<script>
+	<script th:inline="javascript">
 		(function() {
 
 			var stateKey = 'spotify_auth_state';
@@ -139,13 +139,11 @@
 						.addEventListener(
 								'click',
 								function() {
-
-									var client_id = '1a4f765053cc49d0b0daf0905152dfb6'; // Your client id
+									// Your client id
+									var client_id = [[${spotifyClientId}]];
 									// Your redirect uri
-									// TODO: 改為讀環境變數
-									// var redirect_uri = 'http://localhost:5000/porter/KKBOX/Spotify';
-									var redirect_uri = 'http://playlistporter-env.eba-smth7dsp.ap-northeast-1.elasticbeanstalk.com/porter/KKBOX/Spotify';
-
+									var redirect_uri = [[${redirectUri}]];
+									
 									var state = generateRandomString(16);
 
 									localStorage.setItem(stateKey, state);

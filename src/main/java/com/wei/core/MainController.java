@@ -4,7 +4,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +24,13 @@ import com.wei.search.SpotifySearch;
 @Controller
 @Scope("prototype")
 public class MainController {
+  private static final Logger logger = LogManager.getLogger();
+
+  @Value("${SPOTIFY_CLIENT_ID}")
+  private String spotifyClientId = "";
+
+  @Value("${REDIRECT_URI_BASE}")
+  private String redirectUriBase = "";
 
   @Autowired
   KkboxSearch kkboxSearch;
@@ -103,6 +113,9 @@ public class MainController {
       case "SPOTIFY":
         sourcePlaceholder = "https://open.spotify.com/playlist/xxxxxxxxxxxxxxxxxxxxxx";
         break;
+      case "YOUTUBE":
+        sourcePlaceholder = "https://youtube.com/playlist?list=xxxxxxxxxxxxxxxxxx";
+        break;
       default:
         sourcePlaceholder = "";
         break;
@@ -115,6 +128,9 @@ public class MainController {
         break;
       case "SPOTIFY":
         targetPlaceholder = "https://open.spotify.com/playlist/xxxxxxxxxxxxxxxxxxxxxx";
+        break;
+      case "YOUTUBE":
+        sourcePlaceholder = "https://youtube.com/playlist?list=xxxxxxxxxxxxxxxxxx";
         break;
       default:
         targetPlaceholder = "";
@@ -142,8 +158,6 @@ public class MainController {
 
     model.addAttribute("source", source);
     model.addAttribute("target", target);
-    // model.addAttribute("sourcePlaylist", sourcePlaylist);
-    // model.addAttribute("targetPlaylist", targetPlaylist);
 
     Map<String, String> headerMap = new HashMap<>();
     headerMap.put("sourceSongIndex", source + "歌單曲目");
@@ -163,6 +177,8 @@ public class MainController {
     } else if (source.toUpperCase().equals("SPOTIFY") && target.toUpperCase().equals("KKBOX")) {
       // TODO: Spotify to KKBOX
       resultList = new ArrayList<>();
+    } else if (source.toUpperCase().equals("YOUTUBE") && target.toUpperCase().equals("SPOTIFY")) {
+      resultList = porterCarry.youtubeToSpotify(accessToken, sourcePlaylist, targetPlaylist);
     } else {
       resultList = new ArrayList<>();
     }
@@ -172,13 +188,18 @@ public class MainController {
     String usedTime =
         "耗時 " + (double) ((double) (System.currentTimeMillis() - starttime) / 1000.0) + " 秒";
 
+    logger.info(usedTime);
+    
     model.addAttribute("usedTime", usedTime);
 
     return "main";
   }
 
-  @GetMapping("/spotifyAuthModifyPlaylist")
-  public String spotifyAuthModifyPlaylist(Model model) {
+  @GetMapping("/spotifyAuthModifyPlaylist/{source}/{target}")
+  public String spotifyAuthModifyPlaylist(@PathVariable(value = "source") String source,
+      @PathVariable(value = "target") String target, Model model) {
+    model.addAttribute("redirectUri", redirectUriBase + "/porter/" + source + "/" + target);
+    model.addAttribute("spotifyClientId", spotifyClientId);
     return "spotifyAuthModifyPlaylist";
   }
 }
