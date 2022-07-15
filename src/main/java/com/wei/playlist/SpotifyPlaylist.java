@@ -41,45 +41,59 @@ public class SpotifyPlaylist {
 
   private final String apiUrl = "https://api.spotify.com/v1/";
 
+  private Map<String, String> uriMap = new HashMap<>();
+
   public List<Map<String, String>> addItemToPlaylist(String accessToken, String playlistUrl,
-      List<Map<String, String>> resultList) {
+      List<Map<String, String>> porterCarryList) {
 
     String playlistId = getPlaylistId(playlistUrl);
 
     if (playlistId.isEmpty()) {
-      return resultList;
+      logger.info("playlistId is empty. playlistUrl=" + playlistUrl);
+      return porterCarryList;
     }
 
-    if (accessToken != null && !accessToken.isEmpty()) {
+    if (accessToken == null || accessToken.isEmpty()) {
+      logger.info("accessToken is empty.");
+      return porterCarryList;
+    }
 
-      JSONArray uris = new JSONArray();
+    if (porterCarryList == null || porterCarryList.isEmpty()) {
+      logger.info("porterCarryList is empty.");
+      return porterCarryList;
+    }
 
-      for (Map<String, String> result : resultList) {
-        String songUri = result.get("targetSongUri");
-        if (songUri != null && !songUri.isEmpty()) {
-          uris.put(songUri);
+    JSONArray uris = new JSONArray();
+
+    uriMap = new HashMap<>();
+
+    for (Map<String, String> porterCarryMap : porterCarryList) {
+      String songUri = porterCarryMap.get("targetSongUri");
+      if (songUri != null && !songUri.isEmpty()) {
+        uris.put(songUri);
+        if (uris.length() == 100) {
+          post(playlistId, accessToken, uris);
+          uris = new JSONArray();
         }
       }
-
-      String snapshotId = "";
-
-      if (uris.length() > 0) {
-        snapshotId = postAddItemToPlaylist(playlistId, accessToken, uris);
-      }
-
-      if (snapshotId != null && !snapshotId.isEmpty()) {
-        resultList.forEach((m) -> {
-          String songUri = m.get("targetSongUri");
-          if (songUri != null && !songUri.isEmpty()) {
-            m.put("carryResult", "Success !");
-          }
-        });
-      }
     }
-    return resultList;
+
+    if (uris.length() > 0) {
+      post(playlistId, accessToken, uris);
+    }
+
+    if (uriMap != null && !uriMap.isEmpty()) {
+      porterCarryList.forEach((m) -> {
+        String songUri = m.get("targetSongUri");
+        if (songUri != null && !songUri.isEmpty() && uriMap.containsKey(songUri)) {
+          m.put("carryResult", "Success ! snapshotId:" + uriMap.get(songUri));
+        }
+      });
+    }
+    return porterCarryList;
   }
 
-  private String postAddItemToPlaylist(String playlistId, String accessToken, JSONArray uris) {
+  private void post(String playlistId, String accessToken, JSONArray uris) {
 
     String searchUrl = apiUrl + "playlists/{playlistId}/tracks";
 
@@ -106,82 +120,69 @@ public class SpotifyPlaylist {
     ResponseEntity<String> response = null;
 
     try {
-      response = restTemplate.exchange(searchUrl, HttpMethod.POST, request, String.class, params);
-    } catch (Exception e) {
+      TimeUnit.MILLISECONDS.sleep(spotifyRequestDelayMilliseconds);
+    } catch (InterruptedException e) {
       StringWriter errors = new StringWriter();
       e.printStackTrace(new PrintWriter(errors));
       logger.error(errors.toString());
     }
 
+    response = restTemplate.exchange(searchUrl, HttpMethod.POST, request, String.class, params);
+
     String snapshotId = "";
 
     if (response != null) {
-
-      JSONObject body = null;
-
       try {
-        body = new JSONObject(response.getBody());
-      } catch (JSONException e) {
+        snapshotId = analyzeResponse(response);
+      } catch (JSONException | InterruptedException e) {
         StringWriter errors = new StringWriter();
         e.printStackTrace(new PrintWriter(errors));
         logger.error(errors.toString());
       }
+    }
 
-      if (body.has("error")) {
-
-        JSONObject error = null;
+    if (snapshotId != null && !snapshotId.isEmpty()) {
+      for (int i = 0; i < uris.length(); i++) {
+        String uri = null;
         try {
-          error = body.getJSONObject("error");
+          uri = uris.getString(i);
         } catch (JSONException e) {
           StringWriter errors = new StringWriter();
           e.printStackTrace(new PrintWriter(errors));
           logger.error(errors.toString());
         }
-
-        int status = 0;
-        try {
-          status = error.getInt("status");
-        } catch (JSONException e) {
-          StringWriter errors = new StringWriter();
-          e.printStackTrace(new PrintWriter(errors));
-          logger.error(errors.toString());
-        }
-        String msg = null;
-        try {
-          msg = error.getString("message");
-        } catch (JSONException e) {
-          StringWriter errors = new StringWriter();
-          e.printStackTrace(new PrintWriter(errors));
-          logger.error(errors.toString());
-        }
-
-        logger.info("reponse error status = " + status + " , message = " + msg);
-
-        switch (status) {
-          case 401:
-            // Bad or expired token.
-            break;
-          case 429:
-            // The app has exceeded its rate limits.
-            try {
-              TimeUnit.MILLISECONDS.sleep(spotifyRequestDelayMilliseconds);
-            } catch (InterruptedException e) {
-              StringWriter errors = new StringWriter();
-              e.printStackTrace(new PrintWriter(errors));
-              logger.error(errors.toString());
-            }
-            break;
-        }
-      } else {
-        try {
-          snapshotId = body.getString("snapshot_id");
-        } catch (JSONException e) {
-          StringWriter errors = new StringWriter();
-          e.printStackTrace(new PrintWriter(errors));
-          logger.error(errors.toString());
-          return "";
+        if (uri != null && !uri.isEmpty()) {
+          uriMap.put(uri, snapshotId);
         }
       }
+    }
+  }
+
+  private String analyzeResponse(ResponseEntity<String> response)
+      throws JSONException, InterruptedException {
+
+    String snapshotId = "";
+
+    JSONObject body = new JSONObject(response.getBody());
+
+    if (body.has("error")) {
+      JSONObject error = body.getJSONObject("error");
+      int status = error.getInt("status");
+      String msg = error.getString("message");
+
+      logger.info("reponse error status = " + status + " , message = " + msg);
+
+      switch (status) {
+        case 401:
+          // Bad or expired token.
+          break;
+        case 429:
+          // The app has exceeded its rate limits.
+          TimeUnit.MILLISECONDS.sleep(spotifyRequestDelayMilliseconds);
+          break;
+      }
+    } else {
+      snapshotId = body.getString("snapshot_id");
     }
     return snapshotId;
   }

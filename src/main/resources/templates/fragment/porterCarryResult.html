@@ -11,23 +11,25 @@
 			<table>
 				<thead>
 					<tr th:object="${headerMap}">
-						<th th:text="${headerMap.sourceSongIndex}" width=10%>></th>
+						<th th:text="${headerMap.sourceSongIndex}" width=5%>></th>
 						<th th:text="${headerMap.sourceSongName}" width=20%></th>
 						<th th:text="${headerMap.sourceArtistName}" width=15%></th>
 						<th th:text="${headerMap.searchSongName}" width=10%></th>
 						<th th:text="${headerMap.targetSongName}" width=20%></th>
 						<th th:text="${headerMap.targetArtistName}" width=15%></th>
+						<th th:text="${headerMap.likeLevel}" width=5%></th>
 						<th th:text="${headerMap.carryResult}" width=10%></th>
 					</tr>
 				</thead>
 				<tbody>
 					<tr th:each="result:${resultList}">
-						<td th:text="${result.sourceSongIndex}" width=10%>></td>
+						<td th:text="${result.sourceSongIndex}" width=5%>></td>
 						<td th:text="${result.sourceSongName}" width=20%></td>
 						<td th:text="${result.sourceArtistName}" width=15%></td>
 						<td th:text="${result.searchSongName}" width=10%></td>
 						<td th:text="${result.targetSongName}" width=20%></td>
 						<td th:text="${result.targetArtistName}" width=15%></td>
+						<td th:text="${result.likeLevel}" width=5%>></td>
 						<td th:text="${result.carryResult}" width=10%></td>
 					</tr>
 				</tbody>

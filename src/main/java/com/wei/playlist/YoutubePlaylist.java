@@ -67,6 +67,8 @@ public class YoutubePlaylist {
 
     Map<String, String> result;
 
+    int itemIndex = 1;
+
     for (PlaylistItem playlistItem : playlistItems) {
       PlaylistItemSnippet snippet = playlistItem.getSnippet();
       String songName = snippet.getTitle();
@@ -76,9 +78,11 @@ public class YoutubePlaylist {
       logger.info("artistName=" + artistName);
 
       result = new HashMap<>();
+      result.put("songIndex", "" + itemIndex);
       result.put("songName", songName);
       result.put("artistName", artistName);
       resultList.add(result);
+      itemIndex++;
     }
     return resultList;
   }

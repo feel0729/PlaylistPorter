@@ -128,6 +128,7 @@ public class KkboxPlaylist {
         String artistName = item.getJSONObject("album").getJSONObject("artist").getString("name");
 
         Map<String, String> result = new HashMap<>();
+        result.put("songIndex", "" + (itemIndex + 1));
         result.put("songName", songName);
         result.put("artistName", artistName);
 

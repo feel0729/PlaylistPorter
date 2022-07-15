@@ -1,23 +1,18 @@
-package com.wei.core;
+package com.wei.controller;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Controller;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.context.annotation.RequestScope;
-import com.wei.porter.PorterCarry;
 import com.wei.search.KkboxSearch;
 import com.wei.search.SpotifySearch;
 
@@ -26,24 +21,16 @@ import com.wei.search.SpotifySearch;
 public class MainController {
   private static final Logger logger = LogManager.getLogger();
 
-  @Value("${SPOTIFY_CLIENT_ID}")
-  private String spotifyClientId = "";
-
-  @Value("${REDIRECT_URI_BASE}")
-  private String redirectUriBase = "";
-
   @Autowired
   KkboxSearch kkboxSearch;
 
   @Autowired
   SpotifySearch spotifySearch;
 
-  @Autowired
-  PorterCarry porterCarry;
-
   @GetMapping("/")
   public String main(Model model) {
     model.addAttribute("menuChoice", "homepage"); // 回傳首頁
+    logger.info("main");
     return "main";
   }
 
@@ -139,67 +126,5 @@ public class MainController {
     model.addAttribute("targetPlaceholder", targetPlaceholder);
 
     return "main";
-  }
-
-  @PostMapping("/porterCarry/{source}/{target}")
-  @Transactional(timeout = 300)
-  public String porterCarry(@PathVariable(value = "source") String source,
-      @PathVariable(value = "target") String target,
-      @RequestParam(value = "accessToken") String accessToken,
-      @RequestParam(value = "sourcePlaylist") String sourcePlaylist,
-      @RequestParam(value = "targetPlaylist") String targetPlaylist, Model model) {
-
-    Long starttime = System.currentTimeMillis();
-
-    model.addAttribute("menuChoice", "porterCarryResult"); // 回傳搬移結果頁
-
-    String headline = source + " to " + target + " 搬移結果";
-    model.addAttribute("headline", headline);
-
-    model.addAttribute("source", source);
-    model.addAttribute("target", target);
-
-    Map<String, String> headerMap = new HashMap<>();
-    headerMap.put("sourceSongIndex", source + "歌單曲目");
-    headerMap.put("sourceSongName", source + "歌曲名稱");
-    headerMap.put("sourceArtistName", source + "歌手名稱");
-    headerMap.put("searchSongName", "搜尋歌名");
-    headerMap.put("targetSongName", target + "歌曲名稱");
-    headerMap.put("targetArtistName", target + "歌手名稱");
-    headerMap.put("carryResult", target + "搬移結果");
-    model.addAttribute("headerMap", headerMap);
-
-    // 查資料
-    List<Map<String, String>> resultList;
-
-    if (source.toUpperCase().equals("KKBOX") && target.toUpperCase().equals("SPOTIFY")) {
-      resultList = porterCarry.kkboxToSpotify(accessToken, sourcePlaylist, targetPlaylist);
-    } else if (source.toUpperCase().equals("SPOTIFY") && target.toUpperCase().equals("KKBOX")) {
-      // TODO: Spotify to KKBOX
-      resultList = new ArrayList<>();
-    } else if (source.toUpperCase().equals("YOUTUBE") && target.toUpperCase().equals("SPOTIFY")) {
-      resultList = porterCarry.youtubeToSpotify(accessToken, sourcePlaylist, targetPlaylist);
-    } else {
-      resultList = new ArrayList<>();
-    }
-
-    model.addAttribute("resultList", resultList);
-
-    String usedTime =
-        "耗時 " + (double) ((double) (System.currentTimeMillis() - starttime) / 1000.0) + " 秒";
-
-    logger.info(usedTime);
-    
-    model.addAttribute("usedTime", usedTime);
-
-    return "main";
-  }
-
-  @GetMapping("/spotifyAuthModifyPlaylist/{source}/{target}")
-  public String spotifyAuthModifyPlaylist(@PathVariable(value = "source") String source,
-      @PathVariable(value = "target") String target, Model model) {
-    model.addAttribute("redirectUri", redirectUriBase + "/porter/" + source + "/" + target);
-    model.addAttribute("spotifyClientId", spotifyClientId);
-    return "spotifyAuthModifyPlaylist";
   }
 }

@@ -78,6 +78,16 @@ public class SpotifySearch {
 
     ResponseEntity<String> response = null;
 
+    try {
+      // Spotify’s API rate limit is calculated based on the number of calls
+      // that your app makes to Spotify in a rolling 30 second window.
+      TimeUnit.MILLISECONDS.sleep(spotifyRequestDelayMilliseconds);
+    } catch (InterruptedException e) {
+      StringWriter errors = new StringWriter();
+      e.printStackTrace(new PrintWriter(errors));
+      logger.error(errors.toString());
+    }
+
     logger.info("doSearch at " + new Date().toString());
     try {
       response = restTemplate.exchange(searchUrl, HttpMethod.GET, request, String.class, params);
@@ -204,7 +214,26 @@ public class SpotifySearch {
     return !token.isEmpty();
   }
 
-  public Map<String, String> doSearchMostLike(String searchSongName, String sourceArtistName) {
+  public Map<String, String> doSearchMostLike(Map<String, String> sourceSong, int limit) {
+
+    String sourceSongName = sourceSong.get("songName");
+
+    String sourceArtistName = sourceSong.get("artistName");
+
+    String searchSongName = sourceSongName.trim();
+
+    if (searchSongName.contains("-")) {
+      searchSongName = searchSongName.substring(0, searchSongName.indexOf("-"));
+    }
+    if (searchSongName.contains("(")) {
+      searchSongName = searchSongName.substring(0, searchSongName.indexOf("("));
+    }
+    if (searchSongName.contains("【")) {
+      searchSongName = searchSongName.substring(0, searchSongName.indexOf("【"));
+    }
+    if (searchSongName.contains("（")) {
+      searchSongName = searchSongName.substring(0, searchSongName.indexOf("（"));
+    }
 
     logger.info("doSearchMostLike ... searchSongName : " + searchSongName);
 
@@ -214,24 +243,29 @@ public class SpotifySearch {
     String songUri = "";
     String artistName = "";
 
-    int likeLevel = 5; // 1~5,1 is most like,5 is nothing like
+    int likeLevel = 6; // 1~5,1 is most like,5 is nothing like
     // 1:歌名完全符合且歌手名完全符合
     // 2:歌名完全符合或歌手名部分符合
     // 3:歌名部分符合或歌手名部分符合
     // 4:歌名部分符合
-    // 5:不符合
+    // 5:第一首
+    // 6:不符合
 
-    List<Map<String, String>> searchResultList = this.doSearch(searchSongName, 5, false);
+    List<Map<String, String>> searchResultList = this.doSearch(searchSongName, limit, false);
 
+    boolean isFirst = true;
 
     for (Map<String, String> searchResult : searchResultList) {
       String searchResultSongName = searchResult.get("songName");
       String searchResultSongUri = searchResult.get("songUri");
       String searchResultArtistName = searchResult.get("artistName");
 
-      logger.info("searchResultSongName : " + searchResultSongName);
+      int thisSongLikeLevel = 6;
 
-      int thisSongLikeLevel = 5;
+      if (isFirst) {
+        thisSongLikeLevel = 5;
+        isFirst = false;
+      }
 
       if (searchResultSongName.equals(searchSongName)
           && searchResultArtistName.equals(sourceArtistName)) { // 若歌名完全相符且歌手名完全相符
@@ -253,18 +287,22 @@ public class SpotifySearch {
           || searchSongName.contains(searchResultSongName))) { // 若歌名部分相符
         thisSongLikeLevel = 4;
       }
+
       if (thisSongLikeLevel < likeLevel) {
         songName = searchResultSongName;
         songUri = searchResultSongUri;
         artistName = searchResultArtistName;
         likeLevel = thisSongLikeLevel;
       }
+      logger.info("searchResultSongName : " + searchResultSongName);
       logger.info("likeLevel : " + thisSongLikeLevel);
     }
 
+    mostlikeResult.put("searchSongName", searchSongName);
     mostlikeResult.put("songName", songName);
     mostlikeResult.put("songUri", songUri);
     mostlikeResult.put("artistName", artistName);
+    mostlikeResult.put("likeLevel", "" + likeLevel);
     return mostlikeResult;
   }
 }
