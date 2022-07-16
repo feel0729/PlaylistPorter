@@ -222,6 +222,8 @@ public class SpotifySearch {
 
     String searchSongName = sourceSongName.trim();
 
+    String searchArtistName = sourceArtistName.trim();
+
     if (searchSongName.contains("-")) {
       searchSongName = searchSongName.substring(0, searchSongName.indexOf("-"));
     }
@@ -234,8 +236,15 @@ public class SpotifySearch {
     if (searchSongName.contains("（")) {
       searchSongName = searchSongName.substring(0, searchSongName.indexOf("（"));
     }
+    if (searchArtistName.contains("(")) {
+      searchArtistName = searchArtistName.substring(0, searchArtistName.indexOf("("));
+    }
+
+    searchSongName = searchSongName.trim();
+    searchArtistName = searchArtistName.trim();
 
     logger.info("doSearchMostLike ... searchSongName : " + searchSongName);
+    logger.info("doSearchMostLike ... searchArtistName : " + searchArtistName);
 
     Map<String, String> mostlikeResult = new HashMap<>();
 
@@ -251,7 +260,8 @@ public class SpotifySearch {
     // 5:第一首
     // 6:不符合
 
-    List<Map<String, String>> searchResultList = this.doSearch(searchSongName, limit, false);
+    List<Map<String, String>> searchResultList =
+        this.doSearch(searchSongName + " " + sourceArtistName, limit, false);
 
     boolean isFirst = true;
 
@@ -264,7 +274,15 @@ public class SpotifySearch {
 
       if (isFirst) {
         thisSongLikeLevel = 5;
+
+        // songName = searchResultSongName;
+        // songUri = searchResultSongUri;
+        // artistName = searchResultArtistName;
+        // likeLevel = thisSongLikeLevel;
+
         isFirst = false;
+
+        // break;
       }
 
       if (searchResultSongName.equals(searchSongName)

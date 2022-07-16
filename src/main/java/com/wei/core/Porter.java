@@ -93,7 +93,7 @@ public class Porter {
 
       switch (target.toUpperCase()) {
         case "SPOTIFY":
-          mostlikeResult = spotifySearch.doSearchMostLike(sourceItem, 5);
+          mostlikeResult = spotifySearch.doSearchMostLike(sourceItem, 10);
           break;
         default:
           mostlikeResult = new HashMap<>();;

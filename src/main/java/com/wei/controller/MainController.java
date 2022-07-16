@@ -50,7 +50,7 @@ public class MainController {
 
   @GetMapping("/doSearch/{target}")
   public String doSearch(@PathVariable(value = "target") String target,
-      @RequestParam(value = "keyword") String keyword, Model model) {
+      @RequestParam(value = "keyword", required = true) String keyword, Model model) {
 
     model.addAttribute("menuChoice", "searchResult"); // 回傳查詢結果頁
 

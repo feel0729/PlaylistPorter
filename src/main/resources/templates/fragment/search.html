@@ -6,7 +6,8 @@
 <body>
 	<section th:fragment=search>
 		<p th:text="${headline}"></p>
-		<form name="keywordForm" action="#" th:action="@{'/doSearch/'+${target}}" method="get">
+		<form name="keywordForm" action="#"
+			th:action="@{'/doSearch/'+${target}}" method="get">
 			<p>
 				<input type="text" name="keyword" placeholder="請輸入歌名" autofocus
 					required />
