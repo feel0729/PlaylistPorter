@@ -8,11 +8,11 @@
 		<p th:text="${headline}"></p>
 		<table th:if="${not #lists.isEmpty(resultList)}">
 			<thead>
-				<tr>
-					<th>歌曲名稱</th>
-					<th>專輯名稱</th>
-					<th>專輯封面</th>
-					<th>歌手名稱</th>
+				<tr th:object="${headerMap}">
+					<th th:text="${headerMap.songName}">歌曲名稱</th>
+					<th th:text="${headerMap.albumName}">專輯名稱</th>
+					<th th:text="${headerMap.imgUrl}">專輯封面</th>
+					<th th:text="${headerMap.artistName}">歌手名稱</th>
 				</tr>
 			</thead>
 			<tbody>
